@@ -36,8 +36,8 @@ class Brain(nn.Module):
     def forward(self, state):
         return self.layers(state)
 
-    def choose_action(self , state , epsilon = 1.0):
-        if random.random() < self.epsilon:
+    def choose_action(self , state , epsilon = None):
+        if random.random() < (self.epsilon if epsilon is None else epsilon):
             return random.randrange(3)  # Random action
 
         state_tensor = torch.tensor(state , dtype=torch.float32)

@@ -71,6 +71,7 @@ class Main:
         self.fruit.get_random_pos(self.snake.body)
         self.score = 0
         self.done = False
+        self.steps_without_food = 0
         self.font = pygame.font.SysFont(None, 40)
 
     def reset(self):
@@ -79,6 +80,7 @@ class Main:
         self.fruit.get_random_pos(self.snake.body)
         self.score = 0
         self.done = False
+        self.steps_without_food = 0
         return self.get_state()
 
     def get_state(self):
@@ -134,6 +136,7 @@ class Main:
         elif action == 2:
             self.snake.direction = (self.snake.direction - 1) % 4
 
+        self.steps_without_food += 1
         self.snake.move()
         head = self.snake.body[0]
         eating = head.colliderect(self.fruit.body)
@@ -147,11 +150,12 @@ class Main:
             or head.right > WIDTH or head.bottom > HEIGHT
         )
 
-        if hit_wall or hit_body:
+        if hit_wall or hit_body or self.steps_without_food > 100 * len(self.snake.body):
             self.done = True
             return self.get_state(), -10, True
 
         if eating:
+            self.steps_without_food = 0
             self.score += 1
             self.fruit.get_random_pos(self.snake.body)
             reward = 10

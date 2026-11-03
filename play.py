@@ -1,32 +1,49 @@
+"""Watch a saved Snake agent play without training it."""
+import argparse
+from pathlib import Path
 import pygame
+import torch
+from neural_network.brain import Brain
+from snake_game.snake_game import Main
+from vizualizer.network import NetworkVisualizer
 
-from neural_network import brain
-from snake_game import snake_game
 
-brain = brain.Brain()
-game = snake_game.Main()
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--model', type=Path, default=Path(__file__).parent / 'snake_brain_1500.pth')
+    parser.add_argument('--fps', type=int, default=15)
+    parser.add_argument('--games', type=int, default=5)
+    parser.add_argument('--no-visualizer', action='store_true')
+    args = parser.parse_args()
+    brain = Brain()
+    brain.load_state_dict(torch.load(args.model, map_location='cpu', weights_only=True))
+    brain.eval()
+    game = Main()
+    visualizer = None if args.no_visualizer else NetworkVisualizer(brain)
+    clock = pygame.time.Clock()
+    try:
+        for episode in range(1, args.games + 1):
+            state = game.reset()
+            done = False
+            while not done:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        return
+                    if event.type == pygame.WINDOWCLOSE:
+                        if visualizer and event.window.id == visualizer.window.id:
+                            visualizer.handle_event(event)
+                        else:
+                            return
+                action = brain.choose_action(state, epsilon=0.0)
+                if visualizer:
+                    visualizer.update(state, action, 0, 0, episode, game.score)
+                state, reward, done = game.step(action)
+                game.draw()
+                clock.tick(args.fps)
+            print(f'Game {episode}: score {game.score}')
+    finally:
+        pygame.quit()
 
-state = game.reset()
-done = False
-clock = pygame.time.Clock()
 
-while not done: 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            done = True
-    action = brain.choose_action(state, epsilon=1.0)
-
-    state , reward, done = game.step(action)
-
-    old_state = state
-    new_state , reward , done = game.step(action)
-    brain.remember(old_state , action , reward , new_state , done)
-    brain.learn()
-
-    state = new_state
-
-    game.draw()
-    clock.tick(10)
-
-pygame.quit()
-print("Game Over! Final Score:", game.score)
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,1 @@
+{"version":"0.2.0","configurations":[{"name":"Watch trained Snake","type":"debugpy","request":"launch","program":"${workspaceFolder}/play.py","console":"integratedTerminal"},{"name":"Train Snake","type":"debugpy","request":"launch","program":"${workspaceFolder}/train.py","console":"integratedTerminal"}]}
